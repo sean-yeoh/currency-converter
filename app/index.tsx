@@ -4,37 +4,42 @@ import { ActivityIndicator } from 'react-native'
 import { useEffect, useState } from 'react'
 import { CurrencySelection } from './components/CurrencySelection'
 import { Repeat } from '~/lib/icons/Repeat'
-import { useStore } from './hooks/useStore'
+import { useStore, CurrenciesData, Currencies } from './hooks/useStore'
 import { Text } from '~/components/ui/text'
 import { Alert, AlertTitle } from '~/components/ui/alert'
 import { CircleDollarSign } from '~/lib/icons/CircleDollarSign'
 import { Button } from '~/components/ui/button'
-
-const daysBetween = (d1: string | Date, d2: string | Date) => {
-  const diff = Math.abs(new Date(d2).valueOf() - new Date(d1).valueOf())
-  return diff / (1000 * 60 * 60 * 24)
-}
+import {
+  calculateExchangeRate,
+  daysBetween,
+  normalizeCurrenciesData,
+} from '~/lib/utils'
 
 const fetchCurrencies = async () => {
-  const response = await fetch('https://api.fxratesapi.com/latest')
-  const json = await response.json()
+  const response = await fetch(
+    'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json',
+  )
 
-  await AsyncStorage.setItem('currencies', JSON.stringify(json))
+  const json = (await response.json()) as CurrenciesData
+  const normalizedData = normalizeCurrenciesData(json)
+  await AsyncStorage.setItem('currencies', JSON.stringify(normalizedData))
 
-  return json
+  return normalizedData
 }
 
 export default function Screen() {
   const [isLoading, setIsLoading] = useState(true)
   const [isError, setIsError] = useState(false)
   const [exchangeRate, setExchangeRate] = useState(0)
-  const setCurrenciesData = useStore((state) => state.setCurrenciesData)
-  const currenciesData = useStore((state) => state.currenciesData)
-  const currencies = currenciesData.rates
+  const setCurrencies = useStore((state) => state.setCurrencies)
+  const setRecentCurrencies = useStore((state) => state.setRecentCurrencies)
+  const currencies = useStore((state) => state.currencies)
+
   const from = useStore((state) => state.from)
   const to = useStore((state) => state.to)
   const fromAmount = useStore((state) => state.fromAmount)
   const toAmount = useStore((state) => state.toAmount)
+
   const setFrom = useStore((state) => state.setFrom)
   const setFromAmount = useStore((state) => state.setFromAmount)
   const setTo = useStore((state) => state.setTo)
@@ -42,28 +47,30 @@ export default function Screen() {
 
   const getCurrencies = async () => {
     try {
-      const value = await AsyncStorage.getItem('currencies')
-      let storedCurrencies
+      const storedCurrencies = await AsyncStorage.getItem('currencies')
+      let data: Currencies
 
-      if (value !== null) {
-        storedCurrencies = JSON.parse(value)
-        const storedDate = storedCurrencies.date
-        const days = daysBetween(storedDate, new Date())
+      if (storedCurrencies !== null) {
+        data = JSON.parse(storedCurrencies)
+        const storedDate = data.date
+        const currentDate = new Date().toISOString().split('T')[0]
+        const days = daysBetween(storedDate, currentDate)
 
         // refresh currencies
-        if (true || days >= 1) {
+        if (days >= 1) {
           try {
-            storedCurrencies = await fetchCurrencies()
+            data = await fetchCurrencies()
           } catch {
             // Use old currencies if failed to update
-            storedCurrencies = storedCurrencies
+            data = data
           }
         }
       } else {
-        storedCurrencies = await fetchCurrencies()
+        data = await fetchCurrencies()
       }
 
-      setCurrenciesData(storedCurrencies)
+      setCurrencies(data)
+      await loadDefaults(data.rates)
     } catch (e) {
       setIsError(true)
     }
@@ -71,19 +78,63 @@ export default function Screen() {
     setIsLoading(false)
   }
 
+  const loadDefaults = async (rates: Currencies['rates']) => {
+    const asyncStorageFrom = await AsyncStorage.getItem('from')
+    const asyncStorageTo = await AsyncStorage.getItem('to')
+    const asyncStorageFromAmount = await AsyncStorage.getItem('fromAmount')
+    const asyncStorageToAmount = await AsyncStorage.getItem('toAmount')
+
+    if (asyncStorageFrom) {
+      setFrom(asyncStorageFrom)
+    }
+
+    if (asyncStorageTo) {
+      setTo(asyncStorageTo)
+    }
+
+    if (asyncStorageFromAmount) {
+      setFromAmount(parseFloat(asyncStorageFromAmount))
+    }
+
+    if (asyncStorageToAmount) {
+      setToAmount(parseFloat(asyncStorageToAmount))
+    }
+
+    if (asyncStorageFrom && asyncStorageTo) {
+      setExchangeRate(
+        calculateExchangeRate(rates, asyncStorageFrom, asyncStorageTo),
+      )
+    }
+  }
+
+  const getRecentCurrencies = async () => {
+    let recentCurrencies = []
+
+    try {
+      const storedRecentCurrencies = await AsyncStorage.getItem(
+        'recentCurrencies',
+      )
+
+      if (storedRecentCurrencies !== null) {
+        recentCurrencies = JSON.parse(storedRecentCurrencies)
+      }
+    } catch (e) {
+      recentCurrencies = []
+    }
+
+    setRecentCurrencies(recentCurrencies)
+  }
+
   useEffect(() => {
     getCurrencies()
+    getRecentCurrencies()
   }, [])
 
   useEffect(() => {
-    if (from && to) {
-      const fromRate = currencies[from]
-      const toRate = currencies[to]
+    if (currencies && from && to) {
+      const rates = currencies.rates
 
-      const fromRateToUsd = 1 / fromRate
-      const toRateToUsd = 1 / toRate
-      const exchangeRate = fromRateToUsd / toRateToUsd
-      setExchangeRate(exchangeRate)
+      setExchangeRate(calculateExchangeRate(rates, from, to))
     }
   }, [from, to])
 

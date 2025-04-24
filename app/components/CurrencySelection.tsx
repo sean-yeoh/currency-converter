@@ -120,6 +120,16 @@ const CurrencySelection = ({ type, exchangeRate }: CurrencySelectionProps) => {
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         onChangeText={(text) => {
+          if (text.length === 0) {
+            setCurrencyAmount(null)
+            setAmountText('')
+
+            if (type === 'from') {
+              setToAmount(null)
+            } else if (type === 'to') {
+              setFromAmount(null)
+            }
+          }
           if (text.match(REGEX)) {
             setAmountText(text)
 
@@ -135,14 +145,6 @@ const CurrencySelection = ({ type, exchangeRate }: CurrencySelectionProps) => {
               } else if (type === 'to') {
                 setFromAmount(parseFloat((amount / exchangeRate).toFixed(2)))
               }
-            }
-          } else if (text.length === 0) {
-            setCurrencyAmount(null)
-            setAmountText(text)
-            if (type === 'from') {
-              setToAmount(null)
-            } else if (type === 'to') {
-              setFromAmount(null)
             }
           }
         }}

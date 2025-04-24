@@ -3,6 +3,11 @@ import { twMerge } from 'tailwind-merge'
 import { CurrenciesData, Currencies } from '../app/hooks/useStore'
 import CommonCurrencies from '~/lib/common-currency.json'
 
+const daysBetween = (d1: string | Date, d2: string | Date) => {
+  const diff = Math.abs(new Date(d2).valueOf() - new Date(d1).valueOf())
+  return diff / (1000 * 60 * 60 * 24)
+}
+
 const cn = (...inputs: ClassValue[]) => {
   return twMerge(clsx(inputs))
 }
@@ -46,4 +51,4 @@ const normalizeCurrenciesData = (currenciesData: CurrenciesData) => {
   }
 }
 
-export { calculateExchangeRate, cn, normalizeCurrenciesData }
+export { calculateExchangeRate, cn, normalizeCurrenciesData, daysBetween }

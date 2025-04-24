@@ -20,7 +20,9 @@ type CurrenciesData = {
 
 interface StoreState {
   currencies: Currencies | null
-  setCurrencies: (currencies: Currencies) => void
+  setCurrencies: (val: Currencies) => void
+  recentCurrencies: string[]
+  setRecentCurrencies: (val: string[]) => void
   from: string
   setFrom: (val: string) => void
   to: string
@@ -33,8 +35,12 @@ interface StoreState {
 
 const useStore = create<StoreState>()((set) => ({
   currencies: null,
-  setCurrencies: (currencies) =>
-    set((_state) => ({ currencies: { ...currencies } })),
+  setCurrencies: (val) => set((_state) => ({ currencies: { ...val } })),
+  recentCurrencies: [],
+  setRecentCurrencies: async (val) => {
+    set((_state) => ({ recentCurrencies: [...val] }))
+    await AsyncStorage.setItem('recentCurrencies', JSON.stringify([...val]))
+  },
   from: '',
   setFrom: async (val) => {
     set((_state) => ({ from: val }))
