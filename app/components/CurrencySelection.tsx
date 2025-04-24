@@ -5,21 +5,16 @@ import { Input } from '~/components/ui/input'
 import { ChevronDown } from '~/lib/icons/ChevronDown'
 import { CurrencyList } from './CurrencyList'
 import { X } from '~/lib/icons/X'
-
 import {
   Dialog,
-  DialogClose,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogOverlay,
 } from '~/components/ui/dialog'
 
 import { useStore } from '../hooks/useStore'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 type CurrencySelectionProps = {
   type: 'from' | 'to'
@@ -31,8 +26,6 @@ const REGEX = /^[0-9]*\.?[0-9]*$/
 const CurrencySelection = ({ type, exchangeRate }: CurrencySelectionProps) => {
   const from = useStore((state) => state.from)
   const to = useStore((state) => state.to)
-  const fromAmount = useStore((state) => state.fromAmount)
-  const toAmount = useStore((state) => state.toAmount)
   const setFromAmount = useStore((state) => state.setFromAmount)
   const setToAmount = useStore((state) => state.setToAmount)
   let currency: string
@@ -67,17 +60,6 @@ const CurrencySelection = ({ type, exchangeRate }: CurrencySelectionProps) => {
   useEffect(() => {
     setAmountText(currencyAmount ? currencyAmount.toString() : '')
   }, [currencyAmount])
-
-  // useEffect(() => {
-  //   if (exchangeRate) {
-  //     if (fromAmount) {
-  //       setToAmount(parseFloat((fromAmount * exchangeRate).toFixed(2)))
-  //     }
-  //     if (toAmount) {
-  //       setFromAmount(parseFloat((toAmount / exchangeRate).toFixed(2)))
-  //     }
-  //   }
-  // }, [exchangeRate])
 
   return (
     <View
@@ -124,7 +106,7 @@ const CurrencySelection = ({ type, exchangeRate }: CurrencySelectionProps) => {
             currency={currency}
             closeDialog={closeDialog}
             setCurrency={setCurrency}
-            exchangeRate={exchangeRate}
+            type={type}
           />
         </DialogContent>
       </Dialog>

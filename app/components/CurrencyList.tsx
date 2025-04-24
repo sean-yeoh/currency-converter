@@ -8,7 +8,7 @@ type CurrencyListProps = {
   currency: string
   closeDialog: () => void
   setCurrency: (val: string) => void
-  exchangeRate: number
+  type: 'from' | 'to'
 }
 
 type Item = {
@@ -20,10 +20,13 @@ const CurrencyList = ({
   currency,
   closeDialog,
   setCurrency,
-  exchangeRate,
+  type,
 }: CurrencyListProps) => {
   const [searchText, setSearchText] = useState('')
   const currenciesData = useStore((state) => state.currenciesData)
+
+  const from = useStore((state) => state.from)
+  const to = useStore((state) => state.to)
   const fromAmount = useStore((state) => state.fromAmount)
   const toAmount = useStore((state) => state.toAmount)
   const setFromAmount = useStore((state) => state.setFromAmount)
@@ -37,6 +40,32 @@ const CurrencyList = ({
 
   const selectCurrency = (currency: string) => {
     setCurrency(currency)
+    const rates = currenciesData.rates
+    let fromRate: number
+    let toRate: number
+
+    if (type === 'from') {
+      fromRate = rates[currency]
+      toRate = rates[to]
+    } else {
+      fromRate = rates[from]
+      toRate = rates[currency]
+    }
+
+    const fromRateToUsd = 1 / fromRate
+    const toRateToUsd = 1 / toRate
+    const exchangeRate = fromRateToUsd / toRateToUsd
+
+    if (fromAmount && !toAmount) {
+      setToAmount(parseFloat((fromAmount * exchangeRate).toFixed(2)))
+    } else if (!fromAmount && toAmount) {
+      setFromAmount(parseFloat((toAmount / exchangeRate).toFixed(2)))
+    } else if (type === 'from' && fromAmount) {
+      setToAmount(parseFloat((fromAmount * exchangeRate).toFixed(2)))
+    } else if (type === 'to' && toAmount) {
+      setFromAmount(parseFloat((toAmount / exchangeRate).toFixed(2)))
+    }
+
     closeDialog()
   }
 

@@ -80,7 +80,7 @@ export default function Screen() {
           <CurrencySelection type="from" exchangeRate={exchangeRate} />
           <CurrencySelection type="to" exchangeRate={exchangeRate} />
 
-          {from && to && exchangeRate && (
+          {from && to && exchangeRate ? (
             <Alert
               icon={CircleDollarSign}
               className="bg-accent text-accent-foreground"
@@ -89,7 +89,7 @@ export default function Screen() {
                 1 {from} = {exchangeRate.toFixed(4)} {to}
               </AlertTitle>
             </Alert>
-          )}
+          ) : null}
         </>
       )}
     </View>
