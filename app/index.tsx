@@ -1,14 +1,16 @@
-import { View } from 'react-native'
+import { TouchableOpacity, View } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { ActivityIndicator, StyleSheet } from 'react-native'
 import { useEffect, useState } from 'react'
 import currenciesData from '~/lib/currencies.json'
 import { CurrencySelection } from './components/CurrencySelection'
+import { Repeat } from '~/lib/icons/Repeat'
 
 import { useStore } from './hooks/useStore'
 import { Text } from '~/components/ui/text'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { CircleDollarSign } from '~/lib/icons/CircleDollarSign'
+import { Button } from '~/components/ui/button'
 // const storeData = async (value) => {
 //   try {
 //     await AsyncStorage.setItem('currencies', value)
@@ -29,6 +31,12 @@ export default function Screen() {
   const currencies = currenciesData.rates
   const from = useStore((state) => state.from)
   const to = useStore((state) => state.to)
+  const fromAmount = useStore((state) => state.fromAmount)
+  const toAmount = useStore((state) => state.toAmount)
+  const setFrom = useStore((state) => state.setFrom)
+  const setFromAmount = useStore((state) => state.setFromAmount)
+  const setTo = useStore((state) => state.setTo)
+  const setToAmount = useStore((state) => state.setToAmount)
 
   useEffect(() => {
     const getCurrencies = async () => {
@@ -71,25 +79,50 @@ export default function Screen() {
     }
   }, [from, to])
 
+  const switchCurrency = () => {
+    setFrom(to)
+    setFromAmount(toAmount)
+    setTo(from)
+    setToAmount(fromAmount)
+  }
+
   return (
     <View className="flex-1 justify-center items-center gap-5 p-6 bg-secondary/30">
       {isLoading ? (
         <ActivityIndicator size="large" />
       ) : (
         <>
-          <CurrencySelection type="from" exchangeRate={exchangeRate} />
-          <CurrencySelection type="to" exchangeRate={exchangeRate} />
+          <View className="flex-1 justify-center items-center gap-5 relative">
+            <View className="absolute bg-sky-200 right-0 top-0"></View>
 
-          {from && to && exchangeRate ? (
-            <Alert
-              icon={CircleDollarSign}
-              className="bg-accent text-accent-foreground"
+            <CurrencySelection type="from" exchangeRate={exchangeRate} />
+
+            <Button
+              size="icon"
+              variant="secondary"
+              className="rounded-lg"
+              onPress={switchCurrency}
             >
-              <AlertTitle className="-mb-1">
-                1 {from} = {exchangeRate.toFixed(4)} {to}
-              </AlertTitle>
-            </Alert>
-          ) : null}
+              <Repeat
+                className="text-foreground"
+                size={23}
+                strokeWidth={1.25}
+              />
+            </Button>
+
+            <CurrencySelection type="to" exchangeRate={exchangeRate} />
+
+            {from && to && exchangeRate ? (
+              <Alert
+                icon={CircleDollarSign}
+                className="bg-accent text-accent-foreground"
+              >
+                <AlertTitle className="-mb-1">
+                  1 {from} = {exchangeRate.toFixed(4)} {to}
+                </AlertTitle>
+              </Alert>
+            ) : null}
+          </View>
         </>
       )}
     </View>
