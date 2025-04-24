@@ -1,8 +1,26 @@
 import { create } from 'zustand'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
+type Currencies = {
+  date: string
+  rates: {
+    [key: string]: {
+      name: string
+      rate: number
+    }
+  }
+}
+
+type CurrenciesData = {
+  date: string
+  usd: {
+    [key: string]: number
+  }
+}
 
 interface StoreState {
-  currenciesData: any
-  setCurrenciesData: (currenciesData: any) => void
+  currencies: Currencies | null
+  setCurrencies: (currencies: Currencies) => void
   from: string
   setFrom: (val: string) => void
   to: string
@@ -14,16 +32,34 @@ interface StoreState {
 }
 
 const useStore = create<StoreState>()((set) => ({
-  currenciesData: {},
-  setCurrenciesData: (currenciesData) =>
-    set((_state) => ({ currenciesData: { ...currenciesData } })),
+  currencies: null,
+  setCurrencies: (currencies) =>
+    set((_state) => ({ currencies: { ...currencies } })),
   from: '',
-  setFrom: (val) => set((_state) => ({ from: val })),
+  setFrom: async (val) => {
+    set((_state) => ({ from: val }))
+    await AsyncStorage.setItem('from', val)
+  },
   to: '',
-  setTo: (val) => set((_state) => ({ to: val })),
+  setTo: async (val) => {
+    set((_state) => ({ to: val }))
+    await AsyncStorage.setItem('to', val)
+  },
   fromAmount: null,
-  setFromAmount: (val) => set((_state) => ({ fromAmount: val })),
+  setFromAmount: async (val) => {
+    set((_state) => ({ fromAmount: val }))
+    if (val) {
+      await AsyncStorage.setItem('fromAmount', val.toString())
+    }
+  },
   toAmount: null,
-  setToAmount: (val) => set((_state) => ({ toAmount: val })),
+  setToAmount: async (val) => {
+    set((_state) => ({ toAmount: val }))
+    if (val) {
+      await AsyncStorage.setItem('toAmount', val.toString())
+    }
+  },
 }))
+
 export { useStore }
+export type { CurrenciesData, Currencies }

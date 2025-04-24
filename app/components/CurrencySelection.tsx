@@ -1,5 +1,5 @@
 import { View, TouchableOpacity } from 'react-native'
-import * as DialogPrimitive from '@rn-primitives/dialog'
+import { Button } from '~/components/ui/button'
 import { Text } from '~/components/ui/text'
 import { Input } from '~/components/ui/input'
 import { ChevronDown } from '~/lib/icons/ChevronDown'
@@ -82,21 +82,22 @@ const CurrencySelection = ({ type, exchangeRate }: CurrencySelectionProps) => {
               style={{ height: 80 }}
             >
               <Text className="h-full" style={{ fontSize: 26, lineHeight: 78 }}>
-                {currency}
+                {currency.toUpperCase()}
               </Text>
               <ChevronDown className="absolute text-foreground right-1 top-[28]" />
             </View>
           </TouchableOpacity>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px] h-[90%]">
-          <DialogPrimitive.Close
+          <Button
             onPress={closeDialog}
-            className={
-              'absolute right-4 top-4 p-0.5 web:group rounded-sm opacity-70 web:ring-offset-background web:transition-opacity web:hover:opacity-100 web:focus:outline-none web:focus:ring-2 web:focus:ring-ring web:focus:ring-offset-2 web:disabled:pointer-events-none'
-            }
+            onPressIn={closeDialog}
+            variant="ghost"
+            size="icon"
+            className={'z-10 absolute right-4 top-4'}
           >
             <X size={18} className={'text-muted-foreground'} />
-          </DialogPrimitive.Close>
+          </Button>
 
           <DialogHeader>
             <DialogTitle>Choose a currency</DialogTitle>

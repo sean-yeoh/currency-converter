@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useStore } from '../hooks/useStore'
+import { CurrenciesData, useStore, Currencies } from '../hooks/useStore'
 import { X } from '~/lib/icons/X'
 import { View, FlatList, Text, TouchableOpacity } from 'react-native'
 import { Input } from '~/components/ui/input'
+import { calculateExchangeRate } from '~/lib/utils'
 
 type CurrencyListProps = {
   currency: string
@@ -12,8 +13,8 @@ type CurrencyListProps = {
 }
 
 type Item = {
-  id: string
-  value: string
+  title: string
+  description: string
 }
 
 const CurrencyList = ({
@@ -23,47 +24,55 @@ const CurrencyList = ({
   type,
 }: CurrencyListProps) => {
   const [searchText, setSearchText] = useState('')
-  const currenciesData = useStore((state) => state.currenciesData)
-
   const from = useStore((state) => state.from)
   const to = useStore((state) => state.to)
+
+  const rates =
+    useStore((state) => state.currencies?.rates) || ({} as Currencies['rates'])
+  const currencies = Object.keys(rates).map((code) => {
+    const currency = rates[code]
+
+    return {
+      title: code,
+      description: currency.name,
+    }
+  })
+
+  const [filteredData, setFilteredData] = useState(currencies)
+
   const fromAmount = useStore((state) => state.fromAmount)
   const toAmount = useStore((state) => state.toAmount)
   const setFromAmount = useStore((state) => state.setFromAmount)
   const setToAmount = useStore((state) => state.setToAmount)
-  const currencies = Object.keys(currenciesData.rates).map((currency) => {
-    return { id: currency, value: currency }
-  })
 
-  const [filteredData, setFilteredData] = useState(currencies)
   const [focused, setFocused] = useState(false)
 
   const selectCurrency = (currency: string) => {
-    setCurrency(currency)
-    const rates = currenciesData.rates
-    let fromRate: number
-    let toRate: number
+    if (rates) {
+      setCurrency(currency)
 
-    if (type === 'from') {
-      fromRate = rates[currency]
-      toRate = rates[to]
-    } else {
-      fromRate = rates[from]
-      toRate = rates[currency]
-    }
+      let fromRate: string
+      let toRate: string
 
-    const fromRateToUsd = 1 / fromRate
-    const toRateToUsd = 1 / toRate
-    const exchangeRate = fromRateToUsd / toRateToUsd
+      if (type === 'from') {
+        fromRate = currency
+        toRate = to
+      } else {
+        fromRate = from
+        toRate = currency
+      }
 
-    if (fromAmount && !toAmount) {
-      setToAmount(parseFloat((fromAmount * exchangeRate).toFixed(2)))
-    } else if (!fromAmount && toAmount) {
-      setFromAmount(parseFloat((toAmount / exchangeRate).toFixed(2)))
-    } else if (type === 'from' && fromAmount) {
-      setToAmount(parseFloat((fromAmount * exchangeRate).toFixed(2)))
-    } else if (type === 'to' && toAmount) {
-      setFromAmount(parseFloat((toAmount / exchangeRate).toFixed(2)))
+      const exchangeRate = calculateExchangeRate(rates, fromRate, toRate)
+
+      if (fromAmount && !toAmount) {
+        setToAmount(parseFloat((fromAmount * exchangeRate).toFixed(2)))
+      } else if (!fromAmount && toAmount) {
+        setFromAmount(parseFloat((toAmount / exchangeRate).toFixed(2)))
+      } else if (type === 'from' && fromAmount) {
+        setToAmount(parseFloat((fromAmount * exchangeRate).toFixed(2)))
+      } else if (type === 'to' && toAmount) {
+        setFromAmount(parseFloat((toAmount / exchangeRate).toFixed(2)))
+      }
     }
 
     closeDialog()
@@ -71,17 +80,26 @@ const CurrencyList = ({
 
   let index = 0
 
-  const item = currencies.find((i) => i.value === currency)
-  if (item) {
-    index = currencies.indexOf(item)
-  }
+  // const item = currencies.find((i) => i.value === currency)
+
+  // if (item) {
+  //   index = currencies.indexOf(item)
+  // }
 
   useEffect(() => {
     // Filter the data based on search text
-    const filtered = currencies.filter((currency) =>
-      currency.value.toLowerCase().includes(searchText.toLowerCase()),
-    )
-    setFilteredData(filtered)
+    if (rates) {
+      const filtered = currencies.filter((currency) => {
+        const searchTerm = searchText.toLowerCase()
+
+        return (
+          currency.title.toLowerCase().includes(searchTerm) ||
+          currency.description.toLowerCase().includes(searchTerm)
+        )
+      })
+
+      setFilteredData(filtered)
+    }
   }, [searchText])
 
   const clearSearch = () => {
@@ -93,11 +111,12 @@ const CurrencyList = ({
   const renderItem = ({ item }: { item: Item }) => (
     <TouchableOpacity
       className={`px-3 rounded-lg py-4 ${
-        item.value === currency ? 'bg-accent text-accent-foreground' : ''
+        item.title === currency ? 'bg-accent text-accent-foreground' : ''
       }`}
-      onPress={() => selectCurrency(item.value)}
+      onPress={() => selectCurrency(item.title)}
     >
-      <Text className="text-foreground text-2xl">{item.value}</Text>
+      <Text className="text-foreground text-2xl">{item.title}</Text>
+      <Text className="text-muted-foreground">{item.description}</Text>
     </TouchableOpacity>
   )
 
@@ -105,7 +124,7 @@ const CurrencyList = ({
     <View className="flex-1 w-[300]">
       <View>
         <Input
-          className={`w-full uppercase border mb-4 ${
+          className={`w-fullg border mb-4 ${
             focused ? 'border-primary' : 'border-border'
           }`}
           placeholder="Search for a currency"
@@ -114,6 +133,8 @@ const CurrencyList = ({
           clearButtonMode="while-editing"
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
+          autoComplete="off"
+          autoCorrect={false}
         />
 
         {searchText.length > 0 && (
@@ -138,7 +159,7 @@ const CurrencyList = ({
         })}
         data={filteredData}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.title}
         ListEmptyComponent={
           <View className="p-4 items-center">
             <Text className="text-muted-foreground text-lg">
