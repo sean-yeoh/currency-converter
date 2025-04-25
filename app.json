@@ -19,7 +19,7 @@
       "bundleIdentifier": "com.anonymous.currencyconverter"
     },
     "android": {
-      "versionCode": "2",
+      "versionCode": "3",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icons/adaptive-icon.png",
         "backgroundColor": "#ffffff"
