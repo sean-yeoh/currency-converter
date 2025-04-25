@@ -1,5 +1,5 @@
 import '~/global.css'
-
+import { Text } from '~/components/ui/text'
 import {
   DarkTheme,
   DefaultTheme,
@@ -60,7 +60,11 @@ export default function RootLayout() {
         <Stack.Screen
           name="index"
           options={{
-            title: 'Currency Converter',
+            headerTitle: (props) => (
+              <Text className="text-foreground text-2xl" {...props}>
+                Currency Converter
+              </Text>
+            ),
             headerRight: () => <ThemeToggle />,
           }}
         />

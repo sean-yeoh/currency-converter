@@ -200,7 +200,7 @@ export default function Screen() {
               {from && to && exchangeRate ? (
                 <Alert
                   icon={CircleDollarSign}
-                  className="bg-accent text-accent-foreground"
+                  className="bg-accent text-primary"
                 >
                   <AlertTitle className="-mb-1">
                     1 {from} = {exchangeRate.toFixed(4)} {to}
